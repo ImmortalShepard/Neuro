@@ -35,6 +35,16 @@ set_target_properties(brainflow::BrainBitLib32 PROPERTIES
 list(APPEND _IMPORT_CHECK_TARGETS brainflow::BrainBitLib32 )
 list(APPEND _IMPORT_CHECK_FILES_FOR_brainflow::BrainBitLib32 "${_IMPORT_PREFIX}/lib/BrainBitLib32.lib" "${_IMPORT_PREFIX}/lib/BrainBitLib32.dll" )
 
+# Import target "brainflow::BrainFlowBluetooth32" for configuration "Release"
+set_property(TARGET brainflow::BrainFlowBluetooth32 APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
+set_target_properties(brainflow::BrainFlowBluetooth32 PROPERTIES
+  IMPORTED_IMPLIB_RELEASE "${_IMPORT_PREFIX}/lib/BrainFlowBluetooth32.lib"
+  IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/lib/BrainFlowBluetooth32.dll"
+  )
+
+list(APPEND _IMPORT_CHECK_TARGETS brainflow::BrainFlowBluetooth32 )
+list(APPEND _IMPORT_CHECK_FILES_FOR_brainflow::BrainFlowBluetooth32 "${_IMPORT_PREFIX}/lib/BrainFlowBluetooth32.lib" "${_IMPORT_PREFIX}/lib/BrainFlowBluetooth32.dll" )
+
 # Import target "brainflow::BoardController32" for configuration "Release"
 set_property(TARGET brainflow::BoardController32 APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
 set_target_properties(brainflow::BoardController32 PROPERTIES

@@ -60,9 +60,23 @@ enum class BoardIds : int
     ANT_NEURO_EE_410_BOARD = 24,
     ANT_NEURO_EE_411_BOARD = 25,
     ANT_NEURO_EE_430_BOARD = 26,
+    ANT_NEURO_EE_211_BOARD = 27,
+    ANT_NEURO_EE_212_BOARD = 28,
+    ANT_NEURO_EE_213_BOARD = 29,
+    ANT_NEURO_EE_214_BOARD = 30,
+    ANT_NEURO_EE_215_BOARD = 31,
+    ANT_NEURO_EE_221_BOARD = 32,
+    ANT_NEURO_EE_222_BOARD = 33,
+    ANT_NEURO_EE_223_BOARD = 34,
+    ANT_NEURO_EE_224_BOARD = 35,
+    ANT_NEURO_EE_225_BOARD = 36,
+    ENOPHONE_BOARD = 37,
+    MUSE_2_BOARD = 38,
+    MUSE_S_BOARD = 39,
+    BRAINALIVE_BOARD = 40,
     // use it to iterate
     FIRST = PLAYBACK_FILE_BOARD,
-    LAST = ANT_NEURO_EE_430_BOARD
+    LAST = BRAINALIVE_BOARD
 };
 
 enum class IpProtocolType : int
@@ -104,7 +118,8 @@ enum class DetrendOperations : int
 enum class BrainFlowMetrics : int
 {
     RELAXATION = 0,
-    CONCENTRATION = 1
+    CONCENTRATION = 1,
+    USER_DEFINED = 2
 };
 
 enum class BrainFlowClassifiers : int
@@ -112,7 +127,8 @@ enum class BrainFlowClassifiers : int
     REGRESSION = 0,
     KNN = 1,
     SVM = 2,
-    LDA = 3
+    LDA = 3,
+    DYN_LIB_CLASSIFIER = 4
 };
 
 /// LogLevels enum to store all possible log levels

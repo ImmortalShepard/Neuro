@@ -16,7 +16,7 @@ set(CMAKE_IMPORT_FILE_VERSION 1)
 set(_targetsDefined)
 set(_targetsNotDefined)
 set(_expectedTargets)
-foreach(_expectedTarget brainflow::GanglionLib brainflow::MuseLib brainflow::BrainBitLib brainflow::BoardController brainflow::DSPFilters brainflow::WaveLib brainflow::DataHandler brainflow::MLModule brainflow::Brainflow)
+foreach(_expectedTarget brainflow::GanglionLib brainflow::MuseLib brainflow::BrainBitLib brainflow::BrainFlowBluetooth brainflow::BoardController brainflow::DSPFilters brainflow::WaveLib brainflow::DataHandler brainflow::MLModule brainflow::Brainflow)
   list(APPEND _expectedTargets ${_expectedTarget})
   if(NOT TARGET ${_expectedTarget})
     list(APPEND _targetsNotDefined ${_expectedTarget})
@@ -68,6 +68,13 @@ set_target_properties(brainflow::MuseLib PROPERTIES
 add_library(brainflow::BrainBitLib SHARED IMPORTED)
 
 set_target_properties(brainflow::BrainBitLib PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/inc"
+)
+
+# Create imported target brainflow::BrainFlowBluetooth
+add_library(brainflow::BrainFlowBluetooth SHARED IMPORTED)
+
+set_target_properties(brainflow::BrainFlowBluetooth PROPERTIES
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/inc"
 )
 
