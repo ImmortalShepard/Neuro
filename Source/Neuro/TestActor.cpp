@@ -27,12 +27,8 @@ void ATestActor::Tick(float DeltaTime)
 
 void ATestActor::BeginDestroy()
 {
-	if (BoardRunning)
-	{
-		BoardPtr->stop_stream();
-		BoardPtr->release_session();
-		BoardRunning = false;
-	}
+	Super::BeginDestroy();
+	StopBoard();
 }
 
 void ATestActor::CreateBoard()
@@ -61,5 +57,15 @@ void ATestActor::ConnectBoard()
 		{
 			BoardPtr->release_session();
 		}
+	}
+}
+
+void ATestActor::StopBoard()
+{
+	if (BoardRunning)
+	{
+		BoardPtr->stop_stream();
+		BoardPtr->release_session();
+		BoardRunning = false;
 	}
 }

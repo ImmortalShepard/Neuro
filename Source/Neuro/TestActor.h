@@ -34,4 +34,5 @@ private:
 
 	void CreateBoard();
 	void ConnectBoard();
+	void StopBoard();
 };
