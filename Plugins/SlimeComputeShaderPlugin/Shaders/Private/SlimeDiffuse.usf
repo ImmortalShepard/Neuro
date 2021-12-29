@@ -1,0 +1,41 @@
+#pragma once
+
+#include "/Engine/Public/Platform.ush"
+
+RWTexture2D<float4> TrailMap;
+float2 TextureSize;
+
+float DeltaTime;
+
+float DecayRate;
+float DiffuseRate;
+RWTexture2D<float4> DiffuseTrailMap;
+
+[numthreads(8, 8, 1)]
+void Diffuse(uint3 ThreadId : SV_DispatchThreadID)
+{
+    if (ThreadId.x < 0 || ThreadId.x >= (uint) TextureSize.x || ThreadId.y < 0 || ThreadId.y >= (uint) TextureSize.y)
+    {
+        return;
+    }
+
+    float4 sum = 0;
+    float4 originalCol = TrailMap[ThreadId.xy];
+	// 3x3 blur
+    for (int offsetX = -1; offsetX <= 1; offsetX++)
+    {
+        for (int offsetY = -1; offsetY <= 1; offsetY++)
+        {
+            int sampleX = min(TextureSize.x - 1, max(0, ThreadId.x + offsetX));
+            int sampleY = min(TextureSize.y - 1, max(0, ThreadId.y + offsetY));
+            sum += TrailMap[int2(sampleX, sampleY)];
+        }
+    }
+
+    float4 blurredCol = sum / 9;
+    float diffuseWeight = saturate(DiffuseRate * DeltaTime);
+    blurredCol = originalCol * (1 - diffuseWeight) + blurredCol * (diffuseWeight);
+
+	//DiffuseTrailMap[id.xy] = blurredCol * saturate(1 - decayRate * deltaTime);
+    DiffuseTrailMap[ThreadId.xy] = max(0, blurredCol - DecayRate * DeltaTime);
+}

@@ -1,0 +1,18 @@
+struct SlimeAgent
+{
+    float2 Position;
+    float Angle;
+    int4 SpeciesMask;
+    int SpeciesIndex;
+};
+
+struct SpeciesSettings
+{
+    float MoveSpeed;
+    float TurnSpeed;
+
+    float SensorAngleDegrees;
+    float SensorOffsetDst;
+    int SensorSize;
+    float4 Color;
+};

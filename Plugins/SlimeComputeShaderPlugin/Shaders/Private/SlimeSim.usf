@@ -1,0 +1,138 @@
+#pragma once
+
+#include "/Engine/Public/Platform.ush"
+#include "SlimeStructs.ush"
+
+StructuredBuffer<SpeciesSettings> SpeciesSettingsBuffer;
+int NumSpecies;
+
+RWStructuredBuffer<SlimeAgent> Agents;
+uint NumAgents;
+
+RWTexture2D<float4> TrailMap;
+float2 TextureSize;
+
+float TrailWeight;
+
+float DeltaTime;
+float Time;
+
+// Hash function www.cs.ubc.ca/~rbridson/docs/schechter-sca08-turbulence.pdf
+uint Hash(uint State)
+{
+    State ^= 2747636419u;
+    State *= 2654435769u;
+    State ^= State >> 16;
+    State *= 2654435769u;
+    State ^= State >> 16;
+    State *= 2654435769u;
+    return State;
+}
+
+float ScaleToRange01(uint State)
+{
+    return State / 4294967295.0;
+}
+
+
+float Sense(SlimeAgent Agent, SpeciesSettings Settings, float SensorAngleOffset)
+{
+    float sensorAngle = Agent.Angle + SensorAngleOffset;
+    float2 sensorDir = float2(cos(sensorAngle), sin(sensorAngle));
+
+    float2 sensorPos = Agent.Position + sensorDir * Settings.SensorOffsetDst;
+    int sensorCentreX = (int) sensorPos.x;
+    int sensorCentreY = (int) sensorPos.y;
+
+    float sum = 0;
+
+    int4 senseWeight = Agent.SpeciesMask * 2 - 1;
+
+    for (int offsetX = -Settings.SensorSize; offsetX <= Settings.SensorSize; offsetX++)
+    {
+        for (int offsetY = -Settings.SensorSize; offsetY <= Settings.SensorSize; offsetY++)
+        {
+            int sampleX = min(TextureSize.x - 1, max(0, sensorCentreX + offsetX));
+            int sampleY = min(TextureSize.y - 1, max(0, sensorCentreY + offsetY));
+            sum += dot(senseWeight, TrailMap[int2(sampleX, sampleY)]);
+        }
+    }
+
+    return sum;
+}
+
+[numthreads(16, 1, 1)]
+void Update(uint3 ThreadID : SV_DispatchThreadID)
+{
+    if (ThreadID.x >= NumAgents)
+    {
+        return;
+    }
+
+
+    SlimeAgent agent = Agents[ThreadID.x];
+    if (agent.SpeciesIndex >= NumSpecies)
+    {
+	    return;
+    }
+	
+    SpeciesSettings settings = SpeciesSettingsBuffer[agent.SpeciesIndex];
+    float2 pos = agent.Position;
+
+    uint random = Hash(pos.y * TextureSize.x + pos.x + Hash(ThreadID.x + Time * 100000));
+
+	// Steer based on sensory data
+    float sensorAngleRad = settings.SensorAngleDegrees * (3.1415 / 180);
+    float weightForward = Sense(agent, settings, 0);
+    float weightLeft = Sense(agent, settings, sensorAngleRad);
+    float weightRight = Sense(agent, settings, -sensorAngleRad);
+
+	
+    float randomSteerStrength = ScaleToRange01(random);
+    float turnSpeed = settings.TurnSpeed * 2 * 3.1415;
+
+	// Continue in same direction
+    if (weightForward > weightLeft && weightForward > weightRight)
+    {
+        Agents[ThreadID.x].Angle += 0;
+    }
+    else if (weightForward < weightLeft && weightForward < weightRight)
+    {
+        Agents[ThreadID.x].Angle += (randomSteerStrength - 0.5) * 2 * turnSpeed * DeltaTime;
+    }
+	// Turn right
+    else if (weightRight > weightLeft)
+    {
+        Agents[ThreadID.x].Angle -= randomSteerStrength * turnSpeed * DeltaTime;
+    }
+	// Turn left
+    else if (weightLeft > weightRight)
+    {
+        Agents[ThreadID.x].Angle += randomSteerStrength * turnSpeed * DeltaTime;
+    }
+
+
+	// Update position
+    float2 direction = float2(cos(agent.Angle), sin(agent.Angle));
+    float2 newPos = agent.Position + direction * DeltaTime * settings.MoveSpeed;
+
+	
+	// Clamp position to map boundaries, and pick new random move dir if hit boundary
+    if (newPos.x < 0 || newPos.x >= TextureSize.x || newPos.y < 0 || newPos.y >= TextureSize.y)
+    {
+        random = Hash(random);
+        float randomAngle = ScaleToRange01(random) * 2 * 3.1415;
+
+        newPos.x = min(TextureSize.x - 1, max(0, newPos.x));
+        newPos.y = min(TextureSize.y - 1, max(0, newPos.y));
+        Agents[ThreadID.x].Angle = randomAngle;
+    }
+    else
+    {
+        int2 coord = int2(newPos);
+        float4 oldTrail = TrailMap[coord];
+        TrailMap[coord] = min(1, oldTrail + agent.SpeciesMask * TrailWeight * DeltaTime);
+    }
+	
+    Agents[ThreadID.x].Position = newPos;
+}
