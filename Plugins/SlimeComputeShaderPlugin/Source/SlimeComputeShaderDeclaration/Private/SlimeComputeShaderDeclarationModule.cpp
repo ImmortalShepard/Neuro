@@ -115,31 +115,17 @@ void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeCompute
 	QUICK_SCOPE_CYCLE_COUNTER(STAT_ShaderPlugin_Render);
 	SCOPED_DRAW_EVENT(RHICmdList, ShaderPlugin_Render);
 
-	/*if (!TrailMap.IsValid())
-	{
-		FPooledRenderTargetDesc ComputeShaderOutputDesc(FPooledRenderTargetDesc::Create2DDesc(DrawParameters.GetRenderTargetSize(), PF_FloatRGBA, FClearValueBinding::Black, TexCreate_None, TexCreate_ShaderResource | TexCreate_UAV, false));
-		ComputeShaderOutputDesc.DebugName = TEXT("SlimePlugin_TrailMap");
-		GRenderTargetPool.FindFreeElement(RHICmdList, ComputeShaderOutputDesc, TrailMap, TEXT("SlimePlugin_TrailMap"));
-	}*/
-
 	if (!TrailMap.IsValid())
 	{
-		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_SpeciesSettingsBuffer"));
+		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_TrailMap"));
 		CreateInfo.ClearValueBinding = FClearValueBinding::Black;
 		TrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, CreateInfo);
 		TrailMapUAV = RHICreateUnorderedAccessView(TrailMap);
 	}
 
-	/*if (!DiffuseTrailMap.IsValid())
-	{
-		FPooledRenderTargetDesc ComputeShaderOutputDesc(FPooledRenderTargetDesc::Create2DDesc(DrawParameters.GetRenderTargetSize(), PF_FloatRGBA, FClearValueBinding::Black, TexCreate_None, TexCreate_ShaderResource | TexCreate_UAV, false));
-		ComputeShaderOutputDesc.DebugName = TEXT("SlimePlugin_DiffuseTrailMap");
-		GRenderTargetPool.FindFreeElement(RHICmdList, ComputeShaderOutputDesc, DiffuseTrailMap, TEXT("SlimePlugin_DiffuseTrailMap"));
-	}*/
-
 	if (!DiffuseTrailMap.IsValid())
 	{
-		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_SpeciesSettingsBuffer"));
+		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_DiffuseTrailMap"));
 		CreateInfo.ClearValueBinding = FClearValueBinding::Black;
 		DiffuseTrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, CreateInfo);
 		DiffuseTrailMapUAV = RHICreateUnorderedAccessView(DiffuseTrailMap);
@@ -157,7 +143,7 @@ void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeCompute
 
 	if (!AgentsBuffer.IsValid())
 	{
-		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_AgentBuffer"));
+		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_AgentsBuffer"));
 		CreateInfo.ResourceArray = &AgentArray;
 		const uint32 AgentSize = sizeof(FSlimeAgent);
 		const uint32 AgentBufferSize = AgentArray.Num() * AgentSize;

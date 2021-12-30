@@ -23,11 +23,11 @@ public:
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		SHADER_PARAMETER_SRV(StructuredBuffer<SpeciesSettings>, SpeciesSettingsBuffer)
 		SHADER_PARAMETER(int, NumSpecies)
+		SHADER_PARAMETER(FVector4, TrailWeight)
 		SHADER_PARAMETER_UAV(RWStructuredBuffer<SlimeAgent>, Agents)
 		SHADER_PARAMETER(uint32, NumAgents)
 		SHADER_PARAMETER_UAV(RWTexture2D<float4>, TrailMap)
 		SHADER_PARAMETER(FVector2D, TextureSize)
-		SHADER_PARAMETER(float, TrailWeight)
 		SHADER_PARAMETER(float, DeltaTime)
 		SHADER_PARAMETER(float, Time)
 	END_SHADER_PARAMETER_STRUCT()
@@ -56,11 +56,11 @@ public:
 	SHADER_USE_PARAMETER_STRUCT(FDiffuseCS, FGlobalShader);
 
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+		SHADER_PARAMETER(FVector4, DecayRate)
+		SHADER_PARAMETER(FVector4, DiffuseRate)
 		SHADER_PARAMETER_UAV(RWTexture2D<float4>, TrailMap)
 		SHADER_PARAMETER(FVector2D, TextureSize)
 		SHADER_PARAMETER(float, DeltaTime)
-		SHADER_PARAMETER(float, DecayRate)
-		SHADER_PARAMETER(float, DiffuseRate)
 		SHADER_PARAMETER_UAV(RWTexture2D<float4>, DiffuseTrailMap)
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -162,32 +162,30 @@ void FSlimeSim::RunComputeShader_RenderThread(FRHICommandListImmediate& RHICmdLi
 
 	RHICmdList.TransitionResource(ERHIAccess::ERWBarrier, EResourceTransitionPipeline::EGfxToCompute, TrailMap);
 	RHICmdList.TransitionResource(ERHIAccess::ERWBarrier, EResourceTransitionPipeline::EGfxToCompute, AgentsBufferUAV);
+	RHICmdList.TransitionResource(ERHIAccess::ERWBarrier, EResourceTransitionPipeline::EGfxToCompute, DiffuseTrailMap);
 
 	FSlimeSimCS::FParameters SlimePassParameters;
 	SlimePassParameters.SpeciesSettingsBuffer = SpeciesSettingsBufferSRV;
 	SlimePassParameters.NumSpecies = DrawParameters.NumSpecies;
+	SlimePassParameters.TrailWeight = DrawParameters.TrailSettings.TrailWeight;
 	SlimePassParameters.Agents = AgentsBufferUAV;
 	SlimePassParameters.NumAgents = DrawParameters.NumAgents;
 	SlimePassParameters.TrailMap = TrailMap;
 	SlimePassParameters.TextureSize = FVector2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y);
-	SlimePassParameters.TrailWeight = DrawParameters.TrailWeight;
 	SlimePassParameters.DeltaTime = TimeParameters.DeltaTime;
 	SlimePassParameters.Time = TimeParameters.Time;
 
 	TShaderMapRef<FSlimeSimCS> ComputeShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));
-	FIntVector GroupCounts = FIntVector(FMath::DivideAndRoundUp(static_cast<int>(DrawParameters.NumAgents), 16), 1, 1);
+	FIntVector GroupCounts = FIntVector(FMath::DivideAndRoundUp(static_cast<int>(DrawParameters.NumAgents), 64), 1, 1);
 
 	FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, SlimePassParameters, GroupCounts);
-
-	//RHICmdList.TransitionResource(ERHIAccess::ERWBarrier, EResourceTransitionPipeline::EGfxToCompute, TrailMap);
-	RHICmdList.TransitionResource(ERHIAccess::ERWBarrier, EResourceTransitionPipeline::EGfxToCompute, DiffuseTrailMap);
 	
 	FDiffuseCS::FParameters DiffusePassParameters;
+	DiffusePassParameters.DecayRate = DrawParameters.TrailSettings.DecayRate;
+	DiffusePassParameters.DiffuseRate = DrawParameters.TrailSettings.DiffuseRate;
 	DiffusePassParameters.TrailMap = TrailMap;
 	DiffusePassParameters.TextureSize = FVector2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y);
 	DiffusePassParameters.DeltaTime = TimeParameters.DeltaTime;
-	DiffusePassParameters.DecayRate = DrawParameters.DecayRate;
-	DiffusePassParameters.DiffuseRate = DrawParameters.DiffuseRate;
 	DiffusePassParameters.DiffuseTrailMap = DiffuseTrailMap;
 
 	TShaderMapRef<FDiffuseCS> DiffuseShader(GetGlobalShaderMap(GMaxRHIFeatureLevel));

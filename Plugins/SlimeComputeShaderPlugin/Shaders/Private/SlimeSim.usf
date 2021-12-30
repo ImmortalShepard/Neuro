@@ -6,13 +6,13 @@
 StructuredBuffer<SpeciesSettings> SpeciesSettingsBuffer;
 int NumSpecies;
 
+float4 TrailWeight;
+
 RWStructuredBuffer<SlimeAgent> Agents;
 uint NumAgents;
 
 RWTexture2D<float4> TrailMap;
 float2 TextureSize;
-
-float TrailWeight;
 
 float DeltaTime;
 float Time;
@@ -61,7 +61,7 @@ float Sense(SlimeAgent Agent, SpeciesSettings Settings, float SensorAngleOffset)
     return sum;
 }
 
-[numthreads(16, 1, 1)]
+[numthreads(64, 1, 1)]
 void Update(uint3 ThreadID : SV_DispatchThreadID)
 {
     if (ThreadID.x >= NumAgents)

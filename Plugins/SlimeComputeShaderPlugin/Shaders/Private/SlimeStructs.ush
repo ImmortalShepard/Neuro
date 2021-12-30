@@ -14,5 +14,6 @@ struct SpeciesSettings
     float SensorAngleDegrees;
     float SensorOffsetDst;
     int SensorSize;
+	
     float4 Color;
 };

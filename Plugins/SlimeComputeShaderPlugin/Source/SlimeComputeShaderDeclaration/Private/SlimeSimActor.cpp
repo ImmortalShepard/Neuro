@@ -3,11 +3,19 @@
 
 #include "GameFramework/GameUserSettings.h"
 
+#define MAX_NUMBER_OF_SPECIES 4
+
 // Sets default values
 ASlimeSimActor::ASlimeSimActor()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+}
+
+FSlimeAgent& ASlimeSimActor::AssignSpeciesByListIndex(FSlimeAgent& SlimeAgent, int ListIndex) const
+{
+	AssignSpecies(SlimeAgent, ListIndex);
+	return SlimeAgent;
 }
 
 // Called when the game starts or when spawned
@@ -28,8 +36,16 @@ void ASlimeSimActor::BeginPlay()
     	RenderTarget->InitCustomFormat(Resolution.X, Resolution.Y, PF_FloatRGBA, true);
     }
 
+	if (SlimeSettings->SpeciesSettings.Num() > MAX_NUMBER_OF_SPECIES)
+	{
+		SlimeSettings->SpeciesSettings.SetNum(MAX_NUMBER_OF_SPECIES);
+	}
 	TResourceArray<FSpeciesSettings> speciesSettings;
-	speciesSettings.Append(SlimeSettings->SpeciesSettings);
+	speciesSettings.Reserve(SlimeSettings->SpeciesSettings.Num());
+	for (FSlimeSpeciesSettings SpeciesSetting : SlimeSettings->SpeciesSettings)
+	{
+		speciesSettings.Add(SpeciesSetting.SpeciesSettings);
+	}
 	
 	TResourceArray<FSlimeAgent> agents;
 	agents.Reserve(SlimeSettings->NumAgents);
@@ -58,10 +74,15 @@ void ASlimeSimActor::BeginPlay()
 
 	FSlimeComputeShaderParameters slimeParameters(RenderTarget);
 	slimeParameters.NumSpecies = SlimeSettings->SpeciesSettings.Num();
+	FTrailSettings trailSettings;
+	for (int i = 0; i < SlimeSettings->SpeciesSettings.Num(); ++i)
+	{
+		trailSettings.TrailWeight[i] = SlimeSettings->SpeciesSettings[i].TrailWeight;
+		trailSettings.DecayRate[i] = SlimeSettings->SpeciesSettings[i].DecayRate;
+		trailSettings.DiffuseRate[i] = SlimeSettings->SpeciesSettings[i].DiffuseRate;
+	}
+	slimeParameters.TrailSettings = trailSettings;
 	slimeParameters.NumAgents = SlimeSettings->NumAgents;
-	slimeParameters.DecayRate = SlimeSettings->DecayRate;
-	slimeParameters.DiffuseRate = SlimeSettings->DiffuseRate;
-	slimeParameters.TrailWeight = SlimeSettings->TrailWeight;
 	
 	FSlimeComputeShaderDeclarationModule::Get().UpdateParameters(slimeParameters);
 }
@@ -132,14 +153,13 @@ void ASlimeSimActor::SpawnCustom(TResourceArray<FSlimeAgent>& SlimeAgents)
 	}
 }
 
-void ASlimeSimActor::AssignSpecies(FSlimeAgent& SlimeAgent, int Index) const
+void ASlimeSimActor::AssignSpecies(FSlimeAgent& SlimeAgent, int ListIndex) const
 {
 	const int numSpecies = SlimeSettings->SpeciesSettings.Num();
 	const int speciesInterval = SlimeSettings->NumAgents / numSpecies;
-	int speciesIndex = Index / speciesInterval;
+	int speciesIndex = ListIndex / speciesInterval;
 	speciesIndex = speciesIndex >= numSpecies ? numSpecies - 1 : speciesIndex;
-	SlimeAgent.SpeciesIndex = speciesIndex;
-	SlimeAgent.SpeciesMask = FIntVector4(speciesIndex == 0 ? 1 : 0, speciesIndex == 1 ? 1 : 0, speciesIndex == 2 ? 1 : 0, 0);
+	SlimeAgent.SetSpeciesIndex(speciesIndex);
 }
 
 // Called every frame

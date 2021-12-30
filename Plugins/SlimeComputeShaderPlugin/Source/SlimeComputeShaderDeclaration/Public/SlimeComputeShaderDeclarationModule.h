@@ -16,10 +16,8 @@ struct SLIMECOMPUTESHADERDECLARATION_API FSlimeComputeShaderParameters
 {
 	UTextureRenderTarget2D* RenderTarget;
 	uint32 NumSpecies;
+	FTrailSettings TrailSettings;
 	uint32 NumAgents;
-	float TrailWeight;
-	float DecayRate;
-	float DiffuseRate;
 
 	FIntPoint GetRenderTargetSize() const
 	{

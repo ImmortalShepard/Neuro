@@ -2,13 +2,14 @@
 
 #include "/Engine/Public/Platform.ush"
 
+float4 DecayRate;
+float4 DiffuseRate;
+
 RWTexture2D<float4> TrailMap;
 float2 TextureSize;
 
 float DeltaTime;
 
-float DecayRate;
-float DiffuseRate;
 RWTexture2D<float4> DiffuseTrailMap;
 
 [numthreads(8, 8, 1)]
@@ -33,9 +34,8 @@ void Diffuse(uint3 ThreadId : SV_DispatchThreadID)
     }
 
     float4 blurredCol = sum / 9;
-    float diffuseWeight = saturate(DiffuseRate * DeltaTime);
+    float4 diffuseWeight = saturate(DiffuseRate * DeltaTime);
     blurredCol = originalCol * (1 - diffuseWeight) + blurredCol * (diffuseWeight);
-
-	//DiffuseTrailMap[id.xy] = blurredCol * saturate(1 - decayRate * deltaTime);
+    
     DiffuseTrailMap[ThreadId.xy] = max(0, blurredCol - DecayRate * DeltaTime);
 }

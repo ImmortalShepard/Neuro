@@ -19,8 +19,10 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void BeginDestroy() override;
 
-	UFUNCTION(BlueprintImplementableEvent, meta=(AllowPrivateAccess=true))
-	FSlimeAgent CustomSpawn(int Index);
+	UFUNCTION(BlueprintImplementableEvent)
+	FSlimeAgent CustomSpawn(int ListIndex);
+	UFUNCTION(BlueprintCallable)
+	FSlimeAgent& AssignSpeciesByListIndex(UPARAM(ref) FSlimeAgent& SlimeAgent, int ListIndex) const;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -32,9 +34,7 @@ private:
 	void SpawnInwardCircle(TResourceArray<FSlimeAgent>& SlimeAgents) const;
 	void SpawnRandomCircle(TResourceArray<FSlimeAgent>& SlimeAgents) const;
 	void SpawnCustom(TResourceArray<FSlimeAgent>& SlimeAgents);
-	
-	UFUNCTION(BlueprintCallable, meta=(AllowPrivateAccess=true))
-	void AssignSpecies(FSlimeAgent& SlimeAgent, int Index) const;
+	void AssignSpecies(FSlimeAgent& SlimeAgent, int ListIndex) const;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=SlimeSim, meta=(AllowPrivateAccess=true))
 	UTextureRenderTarget2D* RenderTarget;
