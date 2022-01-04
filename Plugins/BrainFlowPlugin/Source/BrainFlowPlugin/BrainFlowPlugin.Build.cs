@@ -29,6 +29,7 @@ public class BrainFlowPlugin : ModuleRules
             RuntimeDependencies.Add("$(TargetOutputDir)/neurosdk-x86.dll", Path.Combine(ModuleDirectory, "Compiled", "Win32_dynamic", "lib", "neurosdk-x86.dll"));
             RuntimeDependencies.Add("$(TargetOutputDir)/BrainBitLib32.dll", Path.Combine(ModuleDirectory, "Compiled", "Win32_dynamic", "lib", "BrainBitLib32.dll"));
             RuntimeDependencies.Add("$(TargetOutputDir)/eego-SDK32.dll", Path.Combine(ModuleDirectory, "Compiled", "Win32_dynamic", "lib", "eego-SDK32.dll"));
+            RuntimeDependencies.Add("$(TargetOutputDir)/BrainFlowBluetooth32.dll", Path.Combine(ModuleDirectory, "Compiled", "Win32_dynamic", "lib", "BrainFlowBluetooth32.dll"));
         }
         if(Target.Platform == UnrealTargetPlatform.Win64)
         {
@@ -46,6 +47,7 @@ public class BrainFlowPlugin : ModuleRules
             RuntimeDependencies.Add("$(TargetOutputDir)/Unicorn.dll", Path.Combine(ModuleDirectory, "Compiled", "x64_dynamic", "lib", "Unicorn.dll"));
             RuntimeDependencies.Add("$(TargetOutputDir)/BrainBitLib.dll", Path.Combine(ModuleDirectory, "Compiled", "x64_dynamic", "lib", "BrainBitLib.dll"));
             RuntimeDependencies.Add("$(TargetOutputDir)/eego-SDK.dll", Path.Combine(ModuleDirectory, "Compiled", "x64_dynamic", "lib", "eego-SDK.dll"));
+            RuntimeDependencies.Add("$(TargetOutputDir)/BrainFlowBluetooth.dll", Path.Combine(ModuleDirectory, "Compiled", "x64_dynamic", "lib", "BrainFlowBluetooth.dll"));
         }
     }
 }

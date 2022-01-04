@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 
 #include "SlimeAgent.h"
+#include "SlimeComputeShaderDeclarationModule.h"
 #include "SlimeSettings.h"
 #include "GameFramework/Actor.h"
 #include "SlimeSimActor.generated.h"
@@ -23,6 +24,12 @@ public:
 	FSlimeAgent CustomSpawn(int ListIndex);
 	UFUNCTION(BlueprintCallable)
 	FSlimeAgent& AssignSpeciesByListIndex(UPARAM(ref) FSlimeAgent& SlimeAgent, int ListIndex) const;
+	UFUNCTION(BlueprintCallable)
+	void UpdateSlimeSim(const TArray<FSlimeSpeciesSettings>& SpeciesSettings, const FBoundsSettings& BoundsSettings);
+	UFUNCTION(BlueprintCallable)
+	void UpdateSlimeSimSpecies(const TArray<FSlimeSpeciesSettings>& SpeciesSettings);
+	UFUNCTION(BlueprintCallable)
+	void UpdateSlimeSimBounds(const FBoundsSettings& BoundsSettings);
 	
 protected:
 	// Called when the game starts or when spawned
@@ -42,4 +49,5 @@ private:
 	FIntPoint Resolution;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=SlimeSim, meta=(AllowPrivateAccess=true))
 	USlimeSettings* SlimeSettings;
+	FSlimeComputeShaderParameters DrawParameters;
 };

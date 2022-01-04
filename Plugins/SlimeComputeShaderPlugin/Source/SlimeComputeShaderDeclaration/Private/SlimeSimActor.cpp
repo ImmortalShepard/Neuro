@@ -1,5 +1,4 @@
 #include "SlimeSimActor.h"
-#include "SlimeComputeShaderDeclarationModule.h"
 
 #include "GameFramework/GameUserSettings.h"
 
@@ -8,7 +7,7 @@
 // Sets default values
 ASlimeSimActor::ASlimeSimActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 }
 
@@ -16,6 +15,89 @@ FSlimeAgent& ASlimeSimActor::AssignSpeciesByListIndex(FSlimeAgent& SlimeAgent, i
 {
 	AssignSpecies(SlimeAgent, ListIndex);
 	return SlimeAgent;
+}
+
+void ASlimeSimActor::UpdateSlimeSim(const TArray<FSlimeSpeciesSettings>& SpeciesSettings, const FBoundsSettings& BoundsSettings)
+{
+	FTrailSettings trailSettings;
+	if (SlimeSettings->SpeciesSettings.Num() == SpeciesSettings.Num())
+	{
+		TResourceArray<FSpeciesSettings> speciesSettings;
+		speciesSettings.Reserve(SpeciesSettings.Num());
+		for (FSlimeSpeciesSettings SpeciesSetting : SpeciesSettings)
+		{
+			speciesSettings.Add(SpeciesSetting.SpeciesSettings);
+		}
+		FSlimeComputeShaderDeclarationModule::Get().UpdateSpeciesSettings(speciesSettings);
+		
+		for (int i = 0; i < SpeciesSettings.Num(); ++i)
+		{
+			trailSettings.TrailWeight[i] = SpeciesSettings[i].TrailWeight;
+			trailSettings.DecayRate[i] = SpeciesSettings[i].DecayRate;
+			trailSettings.DiffuseRate[i] = SpeciesSettings[i].DiffuseRate;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < SlimeSettings->SpeciesSettings.Num(); ++i)
+		{
+			trailSettings.TrailWeight[i] = SlimeSettings->SpeciesSettings[i].TrailWeight;
+			trailSettings.DecayRate[i] = SlimeSettings->SpeciesSettings[i].DecayRate;
+			trailSettings.DiffuseRate[i] = SlimeSettings->SpeciesSettings[i].DiffuseRate;
+		}
+	}
+
+	DrawParameters.TrailSettings = trailSettings;
+	
+	DrawParameters.MapBounds = BoundsSettings.MapBounds;
+	DrawParameters.CircleRadius = BoundsSettings.CircleRadius * Resolution.GetMin();
+	DrawParameters.CircleCenter = BoundsSettings.CircleCenter * Resolution;
+
+	FSlimeComputeShaderDeclarationModule::Get().UpdateParameters(DrawParameters);
+}
+
+void ASlimeSimActor::UpdateSlimeSimSpecies(const TArray<FSlimeSpeciesSettings>& SpeciesSettings)
+{
+	FTrailSettings trailSettings;
+	if (SlimeSettings->SpeciesSettings.Num() == SpeciesSettings.Num())
+	{
+		TResourceArray<FSpeciesSettings> speciesSettings;
+		speciesSettings.Reserve(SpeciesSettings.Num());
+		for (FSlimeSpeciesSettings SpeciesSetting : SpeciesSettings)
+		{
+			speciesSettings.Add(SpeciesSetting.SpeciesSettings);
+		}
+		FSlimeComputeShaderDeclarationModule::Get().UpdateSpeciesSettings(speciesSettings);
+		
+		for (int i = 0; i < SpeciesSettings.Num(); ++i)
+		{
+			trailSettings.TrailWeight[i] = SpeciesSettings[i].TrailWeight;
+			trailSettings.DecayRate[i] = SpeciesSettings[i].DecayRate;
+			trailSettings.DiffuseRate[i] = SpeciesSettings[i].DiffuseRate;
+		}
+	}
+	else
+	{
+		for (int i = 0; i < SlimeSettings->SpeciesSettings.Num(); ++i)
+		{
+			trailSettings.TrailWeight[i] = SlimeSettings->SpeciesSettings[i].TrailWeight;
+			trailSettings.DecayRate[i] = SlimeSettings->SpeciesSettings[i].DecayRate;
+			trailSettings.DiffuseRate[i] = SlimeSettings->SpeciesSettings[i].DiffuseRate;
+		}
+	}
+
+	DrawParameters.TrailSettings = trailSettings;
+
+	FSlimeComputeShaderDeclarationModule::Get().UpdateParameters(DrawParameters);
+}
+
+void ASlimeSimActor::UpdateSlimeSimBounds(const FBoundsSettings& BoundsSettings)
+{
+	DrawParameters.MapBounds = BoundsSettings.MapBounds;
+	DrawParameters.CircleRadius = BoundsSettings.CircleRadius * Resolution.GetMin();
+	DrawParameters.CircleCenter = BoundsSettings.CircleCenter * Resolution;
+
+	FSlimeComputeShaderDeclarationModule::Get().UpdateParameters(DrawParameters);
 }
 
 // Called when the game starts or when spawned
@@ -29,12 +111,12 @@ void ASlimeSimActor::BeginPlay()
 	}
 
 	Resolution = GEngine->GetGameUserSettings()->GetScreenResolution();
-    if (RenderTarget)
-    {
-	    RenderTarget->ClearColor = FLinearColor::Black;
-    	RenderTarget->TargetGamma = 0;
-    	RenderTarget->InitCustomFormat(Resolution.X, Resolution.Y, PF_FloatRGBA, true);
-    }
+	if (RenderTarget)
+	{
+		RenderTarget->ClearColor = FLinearColor::Black;
+		RenderTarget->TargetGamma = 0;
+		RenderTarget->InitCustomFormat(Resolution.X, Resolution.Y, PF_FloatRGBA, true);
+	}
 
 	if (SlimeSettings->SpeciesSettings.Num() > MAX_NUMBER_OF_SPECIES)
 	{
@@ -46,7 +128,7 @@ void ASlimeSimActor::BeginPlay()
 	{
 		speciesSettings.Add(SpeciesSetting.SpeciesSettings);
 	}
-	
+
 	TResourceArray<FSlimeAgent> agents;
 	agents.Reserve(SlimeSettings->NumAgents);
 	switch (SlimeSettings->SpawnMode)
@@ -72,8 +154,8 @@ void ASlimeSimActor::BeginPlay()
 
 	FSlimeComputeShaderDeclarationModule::Get().BeginRendering(speciesSettings, agents);
 
-	FSlimeComputeShaderParameters slimeParameters(RenderTarget);
-	slimeParameters.NumSpecies = SlimeSettings->SpeciesSettings.Num();
+	DrawParameters = FSlimeComputeShaderParameters(RenderTarget);
+	DrawParameters.NumSpecies = SlimeSettings->SpeciesSettings.Num();
 	FTrailSettings trailSettings;
 	for (int i = 0; i < SlimeSettings->SpeciesSettings.Num(); ++i)
 	{
@@ -81,10 +163,13 @@ void ASlimeSimActor::BeginPlay()
 		trailSettings.DecayRate[i] = SlimeSettings->SpeciesSettings[i].DecayRate;
 		trailSettings.DiffuseRate[i] = SlimeSettings->SpeciesSettings[i].DiffuseRate;
 	}
-	slimeParameters.TrailSettings = trailSettings;
-	slimeParameters.NumAgents = SlimeSettings->NumAgents;
-	
-	FSlimeComputeShaderDeclarationModule::Get().UpdateParameters(slimeParameters);
+	DrawParameters.TrailSettings = trailSettings;
+	DrawParameters.NumAgents = SlimeSettings->NumAgents;
+	DrawParameters.MapBounds = SlimeSettings->BoundsSettings.MapBounds;
+	DrawParameters.CircleRadius = SlimeSettings->BoundsSettings.CircleRadius * Resolution.GetMin();
+	DrawParameters.CircleCenter = SlimeSettings->BoundsSettings.CircleCenter * Resolution;
+
+	FSlimeComputeShaderDeclarationModule::Get().UpdateParameters(DrawParameters);
 }
 
 void ASlimeSimActor::SpawnRandom(TResourceArray<FSlimeAgent>& SlimeAgents) const
@@ -174,7 +259,7 @@ void ASlimeSimActor::Tick(float DeltaTime)
 	{
 		timeParameters.Time = world->GetTimeSeconds();
 	}
-	
+
 	FSlimeComputeShaderDeclarationModule::Get().UpdateTimeParameters(timeParameters);
 }
 

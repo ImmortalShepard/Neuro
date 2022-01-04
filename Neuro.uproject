@@ -19,5 +19,8 @@
 			"Name": "Rest",
 			"Enabled": false
 		}
+	],
+	"TargetPlatforms": [
+		"WindowsNoEditor"
 	]
 }

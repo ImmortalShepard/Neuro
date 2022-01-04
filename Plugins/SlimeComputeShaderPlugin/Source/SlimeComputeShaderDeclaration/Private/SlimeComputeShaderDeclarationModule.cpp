@@ -17,7 +17,8 @@ DECLARE_GPU_STAT_NAMED(ShaderPlugin_Pixel, TEXT("ShaderPlugin: Render Pixel Shad
 void FSlimeComputeShaderDeclarationModule::StartupModule()
 {
 	OnPostResolvedSceneColorHandle.Reset();
-	bCachedParametersValid = false;
+	CachedParametersValid = false;
+	SpeciesValid = false;
 
 	FString PluginShaderDir = FPaths::Combine(IPluginManager::Get().FindPlugin(TEXT("SlimeComputeShaderPlugin"))->GetBaseDir(), TEXT("Shaders"));
 	AddShaderSourceDirectoryMapping(TEXT("/SlimeShaders"), PluginShaderDir);
@@ -37,9 +38,10 @@ void FSlimeComputeShaderDeclarationModule::BeginRendering(TResourceArray<FSpecie
 
 	
 	SpeciesSettingsArray = MoveTemp(SpeciesSettings);
+	SpeciesValid = true;
 	AgentArray = MoveTemp(Agents);
 
-	bCachedParametersValid = false;
+	CachedParametersValid = false;
 
 	const FName RendererModuleName("Renderer");
 	IRendererModule* RendererModule = FModuleManager::GetModulePtr<IRendererModule>(RendererModuleName);
@@ -77,8 +79,14 @@ void FSlimeComputeShaderDeclarationModule::UpdateParameters(const FSlimeComputeS
 {
 	RenderEveryFrameLock.Lock();
 	CachedSlimeComputeShaderParameters = DrawParameters;
-	bCachedParametersValid = true;
+	CachedParametersValid = true;
 	RenderEveryFrameLock.Unlock();
+}
+
+void FSlimeComputeShaderDeclarationModule::UpdateSpeciesSettings(TResourceArray<FSpeciesSettings>& SpeciesSettings)
+{
+	SpeciesSettingsArray = MoveTemp(SpeciesSettings);
+	SpeciesValid = false;
 }
 
 void FSlimeComputeShaderDeclarationModule::UpdateTimeParameters(const FSlimeTimeParameters& TimeParameters)
@@ -89,16 +97,16 @@ void FSlimeComputeShaderDeclarationModule::UpdateTimeParameters(const FSlimeTime
 
 void FSlimeComputeShaderDeclarationModule::PostResolveSceneColor_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneRenderTargets& SceneContext)
 {
-	if (!bCachedParametersValid)
+	if (!CachedParametersValid)
 	{
 		return;
 	}
 
 	RenderEveryFrameLock.Lock();
-	FSlimeComputeShaderParameters Copy = CachedSlimeComputeShaderParameters;
+	FSlimeComputeShaderParameters copy = CachedSlimeComputeShaderParameters;
 	RenderEveryFrameLock.Unlock();
 
-	Draw_RenderThread(Copy);
+	Draw_RenderThread(copy);
 }
 
 void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeComputeShaderParameters& DrawParameters)
@@ -117,37 +125,46 @@ void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeCompute
 
 	if (!TrailMap.IsValid())
 	{
-		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_TrailMap"));
-		CreateInfo.ClearValueBinding = FClearValueBinding::Black;
-		TrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, CreateInfo);
+		FRHIResourceCreateInfo createInfo(TEXT("SlimePlugin_TrailMap"));
+		createInfo.ClearValueBinding = FClearValueBinding::Black;
+		TrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, createInfo);
 		TrailMapUAV = RHICreateUnorderedAccessView(TrailMap);
 	}
 
 	if (!DiffuseTrailMap.IsValid())
 	{
-		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_DiffuseTrailMap"));
-		CreateInfo.ClearValueBinding = FClearValueBinding::Black;
-		DiffuseTrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, CreateInfo);
+		FRHIResourceCreateInfo createInfo(TEXT("SlimePlugin_DiffuseTrailMap"));
+		createInfo.ClearValueBinding = FClearValueBinding::Black;
+		DiffuseTrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, createInfo);
 		DiffuseTrailMapUAV = RHICreateUnorderedAccessView(DiffuseTrailMap);
 	}
-	
+
 	if (!SpeciesSettingsBuffer.IsValid())
 	{
-		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_SpeciesSettingsBuffer"));
-		CreateInfo.ResourceArray = &SpeciesSettingsArray;
-		const uint32 SpeciesSettingsSize = sizeof(FSpeciesSettings);
-		const uint32 SpeciesSettingsBufferSize = SpeciesSettingsArray.Num() * SpeciesSettingsSize;
-		SpeciesSettingsBuffer = RHICreateStructuredBuffer(SpeciesSettingsSize, SpeciesSettingsBufferSize, BUF_StructuredBuffer | BUF_ShaderResource, ERHIAccess::SRVMask, CreateInfo);
+		FRHIResourceCreateInfo createInfo(TEXT("SlimePlugin_SpeciesSettingsBuffer"));
+		createInfo.ResourceArray = &SpeciesSettingsArray;
+		const uint32 speciesSettingsSize = sizeof(FSpeciesSettings);
+		const uint32 speciesSettingsBufferSize = SpeciesSettingsArray.Num() * speciesSettingsSize;
+		SpeciesSettingsBuffer = RHICreateStructuredBuffer(speciesSettingsSize, speciesSettingsBufferSize, BUF_StructuredBuffer | BUF_ShaderResource | BUF_Dynamic, ERHIAccess::SRVMask, createInfo);
 		SpeciesSettingsBufferSRV = RHICreateShaderResourceView(SpeciesSettingsBuffer);
+	}
+	else if (!SpeciesValid)
+	{
+		const uint32 speciesSettingsSize = sizeof(FSpeciesSettings);
+		const uint32 speciesSettingsBufferSize = SpeciesSettingsArray.Num() * speciesSettingsSize;
+		void* lockedData = RHILockStructuredBuffer(SpeciesSettingsBuffer, 0, speciesSettingsBufferSize, RLM_WriteOnly);
+		FPlatformMemory::Memcpy(lockedData, SpeciesSettingsArray.GetResourceData(), speciesSettingsBufferSize);
+		RHIUnlockStructuredBuffer(SpeciesSettingsBuffer);
+		SpeciesValid = true;
 	}
 
 	if (!AgentsBuffer.IsValid())
 	{
-		FRHIResourceCreateInfo CreateInfo(TEXT("SlimePlugin_AgentsBuffer"));
-		CreateInfo.ResourceArray = &AgentArray;
-		const uint32 AgentSize = sizeof(FSlimeAgent);
-		const uint32 AgentBufferSize = AgentArray.Num() * AgentSize;
-		AgentsBuffer = RHICreateStructuredBuffer(AgentSize, AgentBufferSize, BUF_StructuredBuffer | BUF_UnorderedAccess, ERHIAccess::SRVMask, CreateInfo);
+		FRHIResourceCreateInfo createInfo(TEXT("SlimePlugin_AgentsBuffer"));
+		createInfo.ResourceArray = &AgentArray;
+		const uint32 agentSize = sizeof(FSlimeAgent);
+		const uint32 agentBufferSize = AgentArray.Num() * agentSize;
+		AgentsBuffer = RHICreateStructuredBuffer(agentSize, agentBufferSize, BUF_StructuredBuffer | BUF_UnorderedAccess, ERHIAccess::UAVMask, createInfo);
 		AgentsBufferUAV = RHICreateUnorderedAccessView(AgentsBuffer, false, false);
 	}
 

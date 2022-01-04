@@ -28,6 +28,9 @@ public:
 		SHADER_PARAMETER(uint32, NumAgents)
 		SHADER_PARAMETER_UAV(RWTexture2D<float4>, TrailMap)
 		SHADER_PARAMETER(FVector2D, TextureSize)
+		SHADER_PARAMETER(uint32, MapBounds)
+		SHADER_PARAMETER(float, CircleRadius)
+		SHADER_PARAMETER(FVector2D, CircleCenter)
 		SHADER_PARAMETER(float, DeltaTime)
 		SHADER_PARAMETER(float, Time)
 	END_SHADER_PARAMETER_STRUCT()
@@ -172,6 +175,9 @@ void FSlimeSim::RunComputeShader_RenderThread(FRHICommandListImmediate& RHICmdLi
 	SlimePassParameters.NumAgents = DrawParameters.NumAgents;
 	SlimePassParameters.TrailMap = TrailMap;
 	SlimePassParameters.TextureSize = FVector2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y);
+	SlimePassParameters.MapBounds = static_cast<uint32>(DrawParameters.MapBounds);
+	SlimePassParameters.CircleRadius = DrawParameters.CircleRadius;
+	SlimePassParameters.CircleCenter = DrawParameters.CircleCenter;
 	SlimePassParameters.DeltaTime = TimeParameters.DeltaTime;
 	SlimePassParameters.Time = TimeParameters.Time;
 

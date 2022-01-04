@@ -18,6 +18,9 @@ struct SLIMECOMPUTESHADERDECLARATION_API FSlimeComputeShaderParameters
 	uint32 NumSpecies;
 	FTrailSettings TrailSettings;
 	uint32 NumAgents;
+	EMapBounds MapBounds;
+	float CircleRadius;
+	FVector2D CircleCenter;
 
 	FIntPoint GetRenderTargetSize() const
 	{
@@ -65,6 +68,8 @@ public:
 
 	void UpdateParameters(const FSlimeComputeShaderParameters& DrawParameters);
 
+	void UpdateSpeciesSettings(TResourceArray<FSpeciesSettings>& SpeciesSettings);
+
 	void UpdateTimeParameters(const FSlimeTimeParameters& TimeParameters);
 
 private:
@@ -85,7 +90,8 @@ private:
 	FSlimeTimeParameters SlimeTimeParameters;
 	FDelegateHandle OnPostResolvedSceneColorHandle;
 	FCriticalSection RenderEveryFrameLock;
-	volatile bool bCachedParametersValid;
+	volatile bool CachedParametersValid;
+	volatile bool SpeciesValid;
 	
 	void PostResolveSceneColor_RenderThread(FRHICommandListImmediate& RHICmdList, class FSceneRenderTargets& SceneContext);
 	void Draw_RenderThread(const FSlimeComputeShaderParameters& DrawParameters);

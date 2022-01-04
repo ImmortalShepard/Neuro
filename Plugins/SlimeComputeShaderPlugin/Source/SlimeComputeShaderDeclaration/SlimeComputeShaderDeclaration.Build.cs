@@ -1,6 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
+using System.IO;
 
 public class SlimeComputeShaderDeclaration : ModuleRules
 {
@@ -8,15 +9,8 @@ public class SlimeComputeShaderDeclaration : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
-		PublicIncludePaths.AddRange(new string[]
-		{
-			"SlimeComputeShaderDeclaration/Public"
-		});
-		
-		PrivateIncludePaths.AddRange(new string[]
-		{
-			"SlimeComputeShaderDeclaration/Private"
-		});
+		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Public"));
+		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
 		
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{

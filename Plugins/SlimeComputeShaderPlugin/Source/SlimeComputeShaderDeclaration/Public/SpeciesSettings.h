@@ -8,19 +8,19 @@ struct SLIMECOMPUTESHADERDECLARATION_API FSpeciesSettings
 {
 	GENERATED_BODY()
 	
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Movement)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Movement)
     float MoveSpeed = 10;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Movement)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Movement)
     float TurnSpeed = 2;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Sensor)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Sensor)
     float SensorAngleDegrees = 30;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Sensor)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Sensor)
     float SensorOffsetDst = 35;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Sensor)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Sensor)
     int SensorSize = 1;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Display)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Display)
 	FLinearColor Color = FLinearColor::White;
 };
 
@@ -29,14 +29,14 @@ struct SLIMECOMPUTESHADERDECLARATION_API FSlimeSpeciesSettings
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Species)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Species)
 	FSpeciesSettings SpeciesSettings;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Trail)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Trail)
 	float TrailWeight = 5;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Trail)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Trail)
 	float DecayRate = 0.5f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Trail)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Trail)
 	float DiffuseRate = 0.5f;
 };
 

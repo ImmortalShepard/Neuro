@@ -14,6 +14,11 @@ uint NumAgents;
 RWTexture2D<float4> TrailMap;
 float2 TextureSize;
 
+//used as enum: 0=Screen/Texture as bounds, 1=Circle as bounds
+uint MapBounds;
+float CircleRadius;
+float2 CircleCenter;
+
 float DeltaTime;
 float Time;
 
@@ -34,6 +39,58 @@ float ScaleToRange01(uint State)
     return State / 4294967295.0;
 }
 
+bool OnScreen(float2 Point)
+{
+    return !(Point.x < 0 || Point.x >= TextureSize.x || Point.y < 0 || Point.y >= TextureSize.y);
+}
+
+bool InCircle(float2 Point)
+{
+    float dx = abs(Point.x - CircleCenter.x);
+    if (dx > CircleRadius)
+    {
+        return false;
+    }
+    float dy = abs(Point.y - CircleCenter.y);
+    if (dy > CircleRadius)
+    {
+        return false;
+    }
+    if (dx + dy <= CircleRadius)
+    {
+        return true;
+    }
+    return dx * dx + dy * dy <= CircleRadius * CircleRadius;
+}
+
+bool InBounds(float2 Point)
+{
+    switch (MapBounds)
+    {
+        case 0:
+            return OnScreen(Point);
+        case 1:
+            return InCircle(Point);
+        default:
+            return false;
+    }
+}
+
+void KeepInBounds(inout float2 Point)
+{
+    switch (MapBounds)
+    {
+        case 0:
+            Point.x = min(TextureSize.x - 1, max(0, Point.x));
+            Point.y = min(TextureSize.y - 1, max(0, Point.y));
+            break;
+        case 1:
+            float2 toPoint = Point - CircleCenter;
+            toPoint = normalize(toPoint);
+            Point = CircleCenter + toPoint * CircleRadius;
+			break;
+    }
+}
 
 float Sense(SlimeAgent Agent, SpeciesSettings Settings, float SensorAngleOffset)
 {
@@ -73,7 +130,7 @@ void Update(uint3 ThreadID : SV_DispatchThreadID)
     SlimeAgent agent = Agents[ThreadID.x];
     if (agent.SpeciesIndex >= NumSpecies)
     {
-	    return;
+        return;
     }
 	
     SpeciesSettings settings = SpeciesSettingsBuffer[agent.SpeciesIndex];
@@ -118,20 +175,22 @@ void Update(uint3 ThreadID : SV_DispatchThreadID)
 
 	
 	// Clamp position to map boundaries, and pick new random move dir if hit boundary
-    if (newPos.x < 0 || newPos.x >= TextureSize.x || newPos.y < 0 || newPos.y >= TextureSize.y)
+    if (InBounds(newPos))
+    {
+	    if (MapBounds != 1 || OnScreen(newPos))
+	    {
+            int2 coord = int2(newPos);
+            float4 oldTrail = TrailMap[coord];
+            TrailMap[coord] = min(1, oldTrail + agent.SpeciesMask * TrailWeight * DeltaTime);
+        }
+    }
+    else
     {
         random = Hash(random);
         float randomAngle = ScaleToRange01(random) * 2 * 3.1415;
 
-        newPos.x = min(TextureSize.x - 1, max(0, newPos.x));
-        newPos.y = min(TextureSize.y - 1, max(0, newPos.y));
+        KeepInBounds(newPos);
         Agents[ThreadID.x].Angle = randomAngle;
-    }
-    else
-    {
-        int2 coord = int2(newPos);
-        float4 oldTrail = TrailMap[coord];
-        TrailMap[coord] = min(1, oldTrail + agent.SpeciesMask * TrailWeight * DeltaTime);
     }
 	
     Agents[ThreadID.x].Position = newPos;
