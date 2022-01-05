@@ -23,14 +23,17 @@ Texture2D<float4> TrailMap;
 void SlimePixelShader(in float2 uv : TEXCOORD0, out float4 OutColor : SV_Target0)
 {
     float4 map = TrailMap[uint2(TextureSize.x * uv.x, TextureSize.y * uv.y)];
+
+    //float sum = max(1, map.x + map.y + map.z + map.w);
 	
     float4 color = 0;
     for (int i = 0; i < NumSpecies; i++)
     {
         float4 mask = float4(i == 0, i == 1, i == 2, i == 3);
         color += SpeciesSettingsBuffer[i].Color * dot(map, mask);
+        //color += SpeciesSettingsBuffer[i].Color * dot(map, mask) / sum;
     }
-    color.a = 1;
+    color = saturate(color);
 
 	OutColor = color;
 }

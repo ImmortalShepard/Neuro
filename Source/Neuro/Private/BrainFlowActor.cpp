@@ -7,6 +7,7 @@ ABrainFlowActor::ABrainFlowActor()
 
 	EegChannels = BoardShim::get_eeg_channels(BoardId);
 	CachedBrainFlowData.SetNumZeroed(EegChannels.size());
+	RawCachedBrainFlowData.SetNumZeroed(EegChannels.size());
 }
 
 void ABrainFlowActor::BeginPlay()
@@ -112,26 +113,45 @@ bool ABrainFlowActor::GetBrainFlowData(TArray<float>& BrainFlowData)
 	{
 		if (!LatestCachedBrainFlowData && BoardPtr->get_board_data_count() > 0)
 		{
+			std::vector<std::string> names = BoardShim::get_eeg_names(BoardId);
+			FString eegString(TEXT("EEG: channels: "));
+
 			BrainFlowArray<double, 2> data = BoardPtr->get_board_data();
 			int filteredSize;
 			for (int index = 0; index < EegChannels.size(); ++index)
 			{
 				double* downSampledData = DataFilter::perform_downsampling(data.get_address(EegChannels[index]), data.get_size(1), data.get_size(1), static_cast<int>(AggOperations::MEAN), &filteredSize);
-				CachedBrainFlowData[index] = MaxBrainFlowValue == 0 ? 0 : FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
+
+				eegString.Append(FString::Printf(TEXT("%hs:%f "), names[index].data(), downSampledData[0]));
+				switch (BrainFlowDataFormat)
+				{
+				case EDataFormat::Absolute:
+					CachedBrainFlowData[index] = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
+					break;
+				case EDataFormat::Relative:
+				{
+					const float newData = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue);
+					CachedBrainFlowData[index] = FMath::Abs(newData - RawCachedBrainFlowData[index]) / (MaxBrainFlowValue * 2);
+					RawCachedBrainFlowData[index] = newData;
+					break;
+				}
+				default:
+					CachedBrainFlowData[index] = downSampledData[0];
+				}
+
 				delete[] downSampledData;
 			}
 			LatestCachedBrainFlowData = true;
 
-			std::vector<std::string> names = BoardShim::get_eeg_names(BoardId);
-			FString eegString(TEXT("EEG: channels: "));
-			for (int i = 0; i < names.size(); ++i)
-			{
-				eegString.Append(FString::Printf(TEXT("%hs:%f "), names[i].data(), CachedBrainFlowData[i]));
-			}
 			UE_LOG(LogTemp, Display, TEXT("%s"), *eegString)
 			GEngine->AddOnScreenDebugMessage(1, 20.f, FColor::Yellow, eegString);
 		}
 		BrainFlowData = CachedBrainFlowData;
 	}
 	return BoardRunning;
+}
+
+int ABrainFlowActor::GetBrainFlowSize()
+{
+	return EegChannels.size();
 }

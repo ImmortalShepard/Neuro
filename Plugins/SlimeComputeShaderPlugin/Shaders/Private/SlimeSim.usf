@@ -182,6 +182,7 @@ void Update(uint3 ThreadID : SV_DispatchThreadID)
             int2 coord = int2(newPos);
             float4 oldTrail = TrailMap[coord];
             TrailMap[coord] = min(1, oldTrail + agent.SpeciesMask * TrailWeight * DeltaTime);
+            //TrailMap[coord] = oldTrail + agent.SpeciesMask * TrailWeight * DeltaTime;
         }
     }
     else
