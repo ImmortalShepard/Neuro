@@ -1,48 +1,34 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/GameModeBase.h"
 #include "BrainFlowPlugin.h"
-#include "BrainFlowActor.generated.h"
-
-//USTRUCT(BlueprintType)
-//struct NEURO_API FBrainFlowData
-//{
-//	GENERATED_BODY()
-//
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//	float A2;
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//	float A1;
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//	float C4;
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-//	float C3;
-//};
+#include "NeuroGameMode.generated.h"
 
 UENUM(BlueprintType)
-enum class EDataFormat : uint8
+enum class EBrainFlowFormat : uint8
 {
 	Absolute,
 	Relative
 };
 
 UCLASS()
-class NEURO_API ABrainFlowActor : public AActor
+class NEURO_API ANeuroGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
-	
 public:
-	ABrainFlowActor();
+	ANeuroGameMode();
 
-	virtual void Tick(float DeltaTime) override;
+	virtual void Tick(float DeltaSeconds) override;
 	virtual void BeginDestroy() override;
-	
+
 	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs="ReturnValue"))
 	bool GetBrainFlowData(TArray<float>& BrainFlowData);
+	UFUNCTION(BlueprintCallable, meta=(ExpandBoolAsExecs="ReturnValue"))
+	bool GetRawBrainFlowData(TArray<float>& RawBrainFlowData);
 	UFUNCTION(BlueprintCallable)
 	int GetBrainFlowSize();
-
+	
 protected:
 	virtual void BeginPlay() override;
 
@@ -50,7 +36,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true))
 	FString MacAddress = FString(TEXT("F4:0E:11:75:77:8F"));
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true, ToolTip="Absolute will give values in the range {-1,1}. Relative will give values in the range {0,1}."))
-	EDataFormat BrainFlowDataFormat = EDataFormat::Absolute;
+	EBrainFlowFormat BrainFlowDataFormat = EBrainFlowFormat::Relative;
 
 	const int BoardId = static_cast<int>(BoardIds::ENOPHONE_BOARD);
 	TSharedPtr<BoardShim> BoardPtr;
@@ -67,4 +53,6 @@ private:
 	void CreateBoard();
 	void ConnectBoard();
 	void StopBoard();
+
+	void LatestBrainFlowData();
 };

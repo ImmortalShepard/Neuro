@@ -33,7 +33,9 @@ void SlimePixelShader(in float2 uv : TEXCOORD0, out float4 OutColor : SV_Target0
         color += SpeciesSettingsBuffer[i].Color * dot(map, mask);
         //color += SpeciesSettingsBuffer[i].Color * dot(map, mask) / sum;
     }
-    color = saturate(color);
+    //color = saturate(color);
+    float maxColor = max(1, max(max(color.r, color.g), color.b));
+    color /= float4(maxColor, maxColor, maxColor, 1);
 
 	OutColor = color;
 }

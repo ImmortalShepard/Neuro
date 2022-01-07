@@ -1,7 +1,10 @@
-#include "BrainFlowActor.h"
-#include "NeuroGameInstance.h"
+#include "NeuroGameMode.h"
 
-ABrainFlowActor::ABrainFlowActor()
+#include "NeuroGameInstance.h"
+#include "Engine/CurveTable.h"
+#include "Engine/DataTable.h"
+
+ANeuroGameMode::ANeuroGameMode()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -10,7 +13,40 @@ ABrainFlowActor::ABrainFlowActor()
 	RawCachedBrainFlowData.SetNumZeroed(EegChannels.size());
 }
 
-void ABrainFlowActor::BeginPlay()
+void ANeuroGameMode::Tick(float DeltaSeconds)
+{
+	LatestCachedBrainFlowData = false;
+	
+	Super::Tick(DeltaSeconds);
+}
+
+void ANeuroGameMode::BeginDestroy()
+{
+	Super::BeginDestroy();
+	
+	StopBoard();
+}
+
+bool ANeuroGameMode::GetBrainFlowData(TArray<float>& BrainFlowData)
+{
+	LatestBrainFlowData();
+	BrainFlowData = CachedBrainFlowData;
+	return BoardRunning;
+}
+
+bool ANeuroGameMode::GetRawBrainFlowData(TArray<float>& RawBrainFlowData)
+{
+	LatestBrainFlowData();
+	RawBrainFlowData = RawCachedBrainFlowData;
+	return BoardRunning;
+}
+
+int ANeuroGameMode::GetBrainFlowSize()
+{
+	return EegChannels.size();
+}
+
+void ANeuroGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
@@ -18,7 +54,7 @@ void ABrainFlowActor::BeginPlay()
 	ConnectBoard();
 }
 
-void ABrainFlowActor::CreateBoard()
+void ANeuroGameMode::CreateBoard()
 {
 	BoardShim::set_log_file("brainflow.log");
 	BoardShim::enable_dev_board_logger();
@@ -47,10 +83,10 @@ void ABrainFlowActor::CreateBoard()
 	}
 	eegString.Appendf(TEXT(", sampling rate:%d"), BoardPtr->get_sampling_rate(BoardId));
 	UE_LOG(LogTemp, Display, TEXT("%s"), *eegString)
-		GEngine->AddOnScreenDebugMessage(0, 20.f, FColor::Yellow, eegString);
+	GEngine->AddOnScreenDebugMessage(0, 20.f, FColor::Yellow, eegString);
 }
 
-void ABrainFlowActor::ConnectBoard()
+void ANeuroGameMode::ConnectBoard()
 {
 	try
 	{
@@ -85,7 +121,7 @@ void ABrainFlowActor::ConnectBoard()
 	}
 }
 
-void ABrainFlowActor::StopBoard()
+void ANeuroGameMode::StopBoard()
 {
 	if (BoardRunning)
 	{
@@ -95,63 +131,40 @@ void ABrainFlowActor::StopBoard()
 	}
 }
 
-void ABrainFlowActor::Tick(float DeltaTime)
-{
-	LatestCachedBrainFlowData = false;
-	Super::Tick(DeltaTime);
-}
-
-void ABrainFlowActor::BeginDestroy()
-{
-	Super::BeginDestroy();
-	StopBoard();
-}
-
-bool ABrainFlowActor::GetBrainFlowData(TArray<float>& BrainFlowData)
+void ANeuroGameMode::LatestBrainFlowData()
 {
 	if (BoardRunning)
 	{
 		if (!LatestCachedBrainFlowData && BoardPtr->get_board_data_count() > 0)
 		{
-			std::vector<std::string> names = BoardShim::get_eeg_names(BoardId);
-			FString eegString(TEXT("EEG: channels: "));
-
 			BrainFlowArray<double, 2> data = BoardPtr->get_board_data();
 			int filteredSize;
 			for (int index = 0; index < EegChannels.size(); ++index)
 			{
 				double* downSampledData = DataFilter::perform_downsampling(data.get_address(EegChannels[index]), data.get_size(1), data.get_size(1), static_cast<int>(AggOperations::MEAN), &filteredSize);
 
-				eegString.Append(FString::Printf(TEXT("%hs:%f "), names[index].data(), downSampledData[0]));
 				switch (BrainFlowDataFormat)
 				{
-				case EDataFormat::Absolute:
+				case EBrainFlowFormat::Absolute:
 					CachedBrainFlowData[index] = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
 					break;
-				case EDataFormat::Relative:
+				case EBrainFlowFormat::Relative:
 				{
-					const float newData = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue);
-					CachedBrainFlowData[index] = FMath::Abs(newData - RawCachedBrainFlowData[index]) / (MaxBrainFlowValue * 2);
-					RawCachedBrainFlowData[index] = newData;
+					const float oldData = FMath::Clamp(static_cast<const float>(RawCachedBrainFlowData[index]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
+					const float newData = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
+					CachedBrainFlowData[index] = FMath::Abs(newData - oldData) / 2;
 					break;
 				}
 				default:
 					CachedBrainFlowData[index] = downSampledData[0];
 				}
-
+				RawCachedBrainFlowData[index] = downSampledData[0];
+				
 				delete[] downSampledData;
 			}
 			LatestCachedBrainFlowData = true;
-
-			UE_LOG(LogTemp, Display, TEXT("%s"), *eegString)
-			GEngine->AddOnScreenDebugMessage(1, 20.f, FColor::Yellow, eegString);
 		}
-		BrainFlowData = CachedBrainFlowData;
 	}
-	return BoardRunning;
-}
 
-int ABrainFlowActor::GetBrainFlowSize()
-{
-	return EegChannels.size();
+	
 }
