@@ -37,15 +37,6 @@ void ASlimeSimActor::UpdateSlimeSim(const TArray<FSlimeSpeciesSettings>& Species
 			trailSettings.DiffuseRate[i] = SpeciesSettings[i].DiffuseRate;
 		}
 	}
-	else
-	{
-		for (int i = 0; i < SlimeSettings->SpeciesSettings.Num(); ++i)
-		{
-			trailSettings.TrailWeight[i] = SlimeSettings->SpeciesSettings[i].TrailWeight;
-			trailSettings.DecayRate[i] = SlimeSettings->SpeciesSettings[i].DecayRate;
-			trailSettings.DiffuseRate[i] = SlimeSettings->SpeciesSettings[i].DiffuseRate;
-		}
-	}
 
 	DrawParameters.TrailSettings = trailSettings;
 	
@@ -74,15 +65,6 @@ void ASlimeSimActor::UpdateSlimeSimSpecies(const TArray<FSlimeSpeciesSettings>& 
 			trailSettings.TrailWeight[i] = SpeciesSettings[i].TrailWeight;
 			trailSettings.DecayRate[i] = SpeciesSettings[i].DecayRate;
 			trailSettings.DiffuseRate[i] = SpeciesSettings[i].DiffuseRate;
-		}
-	}
-	else
-	{
-		for (int i = 0; i < SlimeSettings->SpeciesSettings.Num(); ++i)
-		{
-			trailSettings.TrailWeight[i] = SlimeSettings->SpeciesSettings[i].TrailWeight;
-			trailSettings.DecayRate[i] = SlimeSettings->SpeciesSettings[i].DecayRate;
-			trailSettings.DiffuseRate[i] = SlimeSettings->SpeciesSettings[i].DiffuseRate;
 		}
 	}
 
