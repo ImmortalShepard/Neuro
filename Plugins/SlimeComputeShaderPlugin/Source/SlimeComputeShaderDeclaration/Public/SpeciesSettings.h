@@ -43,6 +43,6 @@ struct SLIMECOMPUTESHADERDECLARATION_API FSlimeSpeciesSettings
 struct SLIMECOMPUTESHADERDECLARATION_API FTrailSettings
 {
 	FVector4 TrailWeight = FVector4(0,0,0,0);
-	FVector4 DecayRate = FVector4(0,0,0,0);;
-	FVector4 DiffuseRate = FVector4(0,0,0,0);;
+	FVector4 DecayRate = FVector4(0,0,0,0);
+	FVector4 DiffuseRate = FVector4(0,0,0,0);
 };
