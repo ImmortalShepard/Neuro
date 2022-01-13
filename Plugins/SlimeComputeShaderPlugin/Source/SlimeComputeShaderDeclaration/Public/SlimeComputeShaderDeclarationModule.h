@@ -93,6 +93,6 @@ private:
 	volatile bool CachedParametersValid;
 	volatile bool SpeciesValid;
 	
-	void PostResolveSceneColor_RenderThread(FRHICommandListImmediate& RHICmdList, class FSceneRenderTargets& SceneContext);
+	void PostResolveSceneColor_RenderThread(FRHICommandListImmediate& RHICmdList, FSceneRenderTargets& SceneContext);
 	void Draw_RenderThread(const FSlimeComputeShaderParameters& DrawParameters);
 };

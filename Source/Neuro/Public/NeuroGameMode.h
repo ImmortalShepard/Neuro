@@ -36,7 +36,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true))
 	FString MacAddress = FString(TEXT("F4:0E:11:75:77:8F"));
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true, ToolTip="Absolute will give values in the range {-1,1}. Relative will give values in the range {0,1}."))
-	EBrainFlowFormat BrainFlowDataFormat = EBrainFlowFormat::Relative;
+	EBrainFlowFormat BrainFlowFormat = EBrainFlowFormat::Relative;
 
 	const int BoardId = static_cast<int>(BoardIds::ENOPHONE_BOARD);
 	TSharedPtr<BoardShim> BoardPtr;

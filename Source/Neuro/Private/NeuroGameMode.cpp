@@ -143,7 +143,7 @@ void ANeuroGameMode::LatestBrainFlowData()
 			{
 				double* downSampledData = DataFilter::perform_downsampling(data.get_address(EegChannels[index]), data.get_size(1), data.get_size(1), static_cast<int>(AggOperations::MEAN), &filteredSize);
 
-				switch (BrainFlowDataFormat)
+				switch (BrainFlowFormat)
 				{
 				case EBrainFlowFormat::Absolute:
 					CachedBrainFlowData[index] = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
@@ -165,6 +165,4 @@ void ANeuroGameMode::LatestBrainFlowData()
 			LatestCachedBrainFlowData = true;
 		}
 	}
-
-	
 }
