@@ -124,6 +124,9 @@ void ASlimeSimActor::BeginPlay()
 	case ESpawnMode::InwardCircle:
 		SpawnInwardCircle(agents);
 		break;
+	case ESpawnMode::OutwardCircle:
+		SpawnOutwardCircle(agents);
+		break;
 	case ESpawnMode::RandomCircle:
 		SpawnRandomCircle(agents);
 		break;
@@ -190,6 +193,22 @@ void ASlimeSimActor::SpawnInwardCircle(TResourceArray<FSlimeAgent>& SlimeAgents)
 		FSlimeAgent newAgent;
 		newAgent.Position = center + FMath::RandPointInCircle(circleRadius);
 		const FVector2D angleVector = (center - newAgent.Position).GetSafeNormal();
+		newAgent.Angle = angleVector.IsZero() ? FMath::FRand() * PI * 2 : FMath::Atan2(angleVector.Y, angleVector.X);
+		AssignSpecies(newAgent, i);
+
+		SlimeAgents.Add(newAgent);
+	}
+}
+
+void ASlimeSimActor::SpawnOutwardCircle(TResourceArray<FSlimeAgent>& SlimeAgents) const
+{
+	FVector2D center = FVector2D(SlimeSettings->SpawnPointX * Resolution.X, SlimeSettings->SpawnPointY * Resolution.Y);
+	float circleRadius = SlimeSettings->SpawnCircleSize * Resolution.GetMin() * 0.5f;
+	for (int i = 0; i < SlimeSettings->NumAgents; ++i)
+	{
+		FSlimeAgent newAgent;
+		newAgent.Position = center + FMath::RandPointInCircle(circleRadius);
+		const FVector2D angleVector = (newAgent.Position - center).GetSafeNormal();
 		newAgent.Angle = angleVector.IsZero() ? FMath::FRand() * PI * 2 : FMath::Atan2(angleVector.Y, angleVector.X);
 		AssignSpecies(newAgent, i);
 

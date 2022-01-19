@@ -39,6 +39,7 @@ private:
 	void SpawnRandom(TResourceArray<FSlimeAgent>& SlimeAgents) const;
 	void SpawnPoint(TResourceArray<FSlimeAgent>& SlimeAgents) const;
 	void SpawnInwardCircle(TResourceArray<FSlimeAgent>& SlimeAgents) const;
+	void SpawnOutwardCircle(TResourceArray<FSlimeAgent>& SlimeAgents) const;
 	void SpawnRandomCircle(TResourceArray<FSlimeAgent>& SlimeAgents) const;
 	void SpawnCustom(TResourceArray<FSlimeAgent>& SlimeAgents);
 	void AssignSpecies(FSlimeAgent& SlimeAgent, int ListIndex) const;

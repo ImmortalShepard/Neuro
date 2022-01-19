@@ -12,6 +12,7 @@ enum class ESpawnMode : uint8
 	Random,
 	Point,
 	InwardCircle,
+	OutwardCircle,
 	RandomCircle,
 	CustomSpawn
 };
