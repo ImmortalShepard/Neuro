@@ -135,24 +135,37 @@ void ANeuroGameMode::LatestBrainFlowData()
 {
 	if (BoardRunning)
 	{
-		if (!LatestCachedBrainFlowData && BoardPtr->get_board_data_count() > 0)
+		const int boardDataCount = BoardPtr->get_board_data_count();
+		if (!LatestCachedBrainFlowData && boardDataCount > 0)
 		{
-			BrainFlowArray<double, 2> data = BoardPtr->get_board_data();
+			BrainFlowArray<double, 2> data;
+			switch (BrainFlowProcessing)
+			{
+			case EBrainFlowProcessing::Current:
+				data = BoardPtr->get_board_data(boardDataCount);
+				break;
+			case EBrainFlowProcessing::Running:
+				data = BoardPtr->get_current_board_data(boardDataCount);
+				break;
+			default:
+				data = BoardPtr->get_board_data(boardDataCount);
+			}
+			
 			int filteredSize;
 			for (int index = 0; index < EegChannels.size(); ++index)
 			{
 				double* downSampledData = DataFilter::perform_downsampling(data.get_address(EegChannels[index]), data.get_size(1), data.get_size(1), static_cast<int>(AggOperations::MEAN), &filteredSize);
-
+				
 				switch (BrainFlowFormat)
 				{
 				case EBrainFlowFormat::Absolute:
-					CachedBrainFlowData[index] = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
+					CachedBrainFlowData[index] = FMath::Clamp(static_cast<const float>(downSampledData[0]) / MaxBrainFlowValue, -1.f, 1.f);
 					break;
 				case EBrainFlowFormat::Relative:
 				{
-					const float oldData = FMath::Clamp(static_cast<const float>(RawCachedBrainFlowData[index]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
-					const float newData = FMath::Clamp(static_cast<const float>(downSampledData[0]), -MaxBrainFlowValue, MaxBrainFlowValue) / MaxBrainFlowValue;
-					CachedBrainFlowData[index] = FMath::Abs(newData - oldData) / 2;
+					const float oldData = RawCachedBrainFlowData[index];
+					const float newData = static_cast<const float>(downSampledData[0]);
+					CachedBrainFlowData[index] = FMath::Clamp(FMath::Abs(newData - oldData) / MaxBrainFlowValue / 2, 0.f, 1.f);
 					break;
 				}
 				default:
