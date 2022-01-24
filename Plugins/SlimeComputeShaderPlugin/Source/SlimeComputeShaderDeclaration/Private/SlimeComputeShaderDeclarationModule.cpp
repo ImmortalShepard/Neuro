@@ -36,7 +36,7 @@ void FSlimeComputeShaderDeclarationModule::BeginRendering(TResourceArray<FSpecie
 		return;
 	}
 
-	
+
 	SpeciesSettingsArray = MoveTemp(SpeciesSettings);
 	SpeciesValid = true;
 	AgentArray = MoveTemp(Agents);
@@ -77,16 +77,18 @@ void FSlimeComputeShaderDeclarationModule::EndRendering()
 
 void FSlimeComputeShaderDeclarationModule::UpdateParameters(const FSlimeComputeShaderParameters& DrawParameters)
 {
-	RenderEveryFrameLock.Lock();
+	//RenderEveryFrameLock.Lock();
 	CachedSlimeComputeShaderParameters = DrawParameters;
 	CachedParametersValid = true;
-	RenderEveryFrameLock.Unlock();
+	//RenderEveryFrameLock.Unlock();
 }
 
 void FSlimeComputeShaderDeclarationModule::UpdateSpeciesSettings(TResourceArray<FSpeciesSettings>& SpeciesSettings)
 {
+	//RenderEveryFrameLock.Lock();
 	SpeciesSettingsArray = MoveTemp(SpeciesSettings);
 	SpeciesValid = false;
+	//RenderEveryFrameLock.Unlock();
 }
 
 void FSlimeComputeShaderDeclarationModule::UpdateTimeParameters(const FSlimeTimeParameters& TimeParameters)
@@ -102,18 +104,16 @@ void FSlimeComputeShaderDeclarationModule::PostResolveSceneColor_RenderThread(FR
 		return;
 	}
 
-	RenderEveryFrameLock.Lock();
-	FSlimeComputeShaderParameters copy = CachedSlimeComputeShaderParameters;
-	RenderEveryFrameLock.Unlock();
+	//FSlimeComputeShaderParameters copy = CachedSlimeComputeShaderParameters;
 
-	Draw_RenderThread(copy);
+	Draw_RenderThread();
 }
 
-void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeComputeShaderParameters& DrawParameters)
+void FSlimeComputeShaderDeclarationModule::Draw_RenderThread()
 {
 	check(IsInRenderingThread());
 
-	if (!DrawParameters.RenderTarget)
+	if (!CachedSlimeComputeShaderParameters.RenderTarget)
 	{
 		return;
 	}
@@ -127,7 +127,7 @@ void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeCompute
 	{
 		FRHIResourceCreateInfo createInfo(TEXT("SlimePlugin_TrailMap"));
 		createInfo.ClearValueBinding = FClearValueBinding::Black;
-		TrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, createInfo);
+		TrailMap = RHICreateTexture2D(CachedSlimeComputeShaderParameters.GetRenderTargetSize().X, CachedSlimeComputeShaderParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, createInfo);
 		TrailMapUAV = RHICreateUnorderedAccessView(TrailMap);
 	}
 
@@ -135,7 +135,7 @@ void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeCompute
 	{
 		FRHIResourceCreateInfo createInfo(TEXT("SlimePlugin_DiffuseTrailMap"));
 		createInfo.ClearValueBinding = FClearValueBinding::Black;
-		DiffuseTrailMap = RHICreateTexture2D(DrawParameters.GetRenderTargetSize().X, DrawParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, createInfo);
+		DiffuseTrailMap = RHICreateTexture2D(CachedSlimeComputeShaderParameters.GetRenderTargetSize().X, CachedSlimeComputeShaderParameters.GetRenderTargetSize().Y, PF_FloatRGBA, 1, 1, TexCreate_ShaderResource | TexCreate_UAV, createInfo);
 		DiffuseTrailMapUAV = RHICreateUnorderedAccessView(DiffuseTrailMap);
 	}
 
@@ -147,6 +147,7 @@ void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeCompute
 		const uint32 speciesSettingsBufferSize = SpeciesSettingsArray.Num() * speciesSettingsSize;
 		SpeciesSettingsBuffer = RHICreateStructuredBuffer(speciesSettingsSize, speciesSettingsBufferSize, BUF_StructuredBuffer | BUF_ShaderResource | BUF_Dynamic, ERHIAccess::SRVMask, createInfo);
 		SpeciesSettingsBufferSRV = RHICreateShaderResourceView(SpeciesSettingsBuffer);
+		SpeciesValid = true;
 	}
 	else if (!SpeciesValid)
 	{
@@ -168,8 +169,8 @@ void FSlimeComputeShaderDeclarationModule::Draw_RenderThread(const FSlimeCompute
 		AgentsBufferUAV = RHICreateUnorderedAccessView(AgentsBuffer, false, false);
 	}
 
-	FSlimeSim::RunComputeShader_RenderThread(RHICmdList, DrawParameters, SlimeTimeParameters, TrailMapUAV, DiffuseTrailMapUAV, SpeciesSettingsBufferSRV, AgentsBufferUAV);
+	FSlimeSim::RunComputeShader_RenderThread(RHICmdList, CachedSlimeComputeShaderParameters, SlimeTimeParameters, TrailMapUAV, DiffuseTrailMapUAV, SpeciesSettingsBufferSRV, AgentsBufferUAV);
 	TrailMap.Swap(DiffuseTrailMap);
 	TrailMapUAV.Swap(DiffuseTrailMapUAV);
-	FSlimeSim::DrawToRenderTarget_RenderThread(RHICmdList, DrawParameters, TrailMap, SpeciesSettingsBufferSRV);
+	FSlimeSim::DrawToRenderTarget_RenderThread(RHICmdList, CachedSlimeComputeShaderParameters, TrailMap, SpeciesSettingsBufferSRV);
 }

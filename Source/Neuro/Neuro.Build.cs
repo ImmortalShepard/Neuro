@@ -14,5 +14,7 @@ public class Neuro : ModuleRules
 
         PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "HeadMountedDisplay" });
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "BrainFlowPlugin" });
-	}
+
+        bEnableExceptions = true;
+    }
 }

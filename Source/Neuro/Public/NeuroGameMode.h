@@ -9,6 +9,7 @@ UENUM(BlueprintType)
 enum class EBrainFlowFormat : uint8
 {
 	Absolute,
+	AbsolutePositive,
 	Relative
 };
 
@@ -44,7 +45,7 @@ private:
 	FString MacAddress = FString(TEXT("F4:0E:11:75:77:8F"));
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true))
 	EBrainFlowProcessing BrainFlowProcessing = EBrainFlowProcessing::Current;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true, ToolTip="Absolute will give values in the range {-1,1}. Relative will give values in the range {0,1}."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true))
 	EBrainFlowFormat BrainFlowFormat = EBrainFlowFormat::Relative;
 
 	const int BoardId = static_cast<int>(BoardIds::ENOPHONE_BOARD);
@@ -57,7 +58,7 @@ private:
 	TArray<float> CachedBrainFlowData;
 	TArray<float> RawCachedBrainFlowData;
 	bool LatestCachedBrainFlowData = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true, ClampMin=0.001f, UIMin=0.001f, ToolTip="The value used to bring the BrainFlow data to a max of 1."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true, ClampMin=0.001f, UIMin=0.001f))
 	float MaxBrainFlowValue = 200.0f;
 
 	void CreateBoard();
@@ -65,4 +66,7 @@ private:
 	void StopBoard();
 
 	void LatestBrainFlowData();
+	void AbsoluteLatest(BrainFlowArray<double, 2>& Data);
+	void AbsolutePositiveLatest(BrainFlowArray<double, 2>& Data);
+	void RelativeLatest(BrainFlowArray<double, 2>& Data);
 };

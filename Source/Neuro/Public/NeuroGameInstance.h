@@ -12,7 +12,9 @@ class NEURO_API UNeuroGameInstance : public UGameInstance
 	GENERATED_BODY()
 
 public:
+	UFUNCTION(BlueprintCallable)
 	FString GetMacAddress();
+	UFUNCTION(BlueprintCallable)
 	void SetMacAddress(FString NewMacAddress);
 
 	virtual void Init() override;
