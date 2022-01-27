@@ -10,8 +10,7 @@ enum class EBrainFlowFormat : uint8
 {
 	Absolute,
 	AbsolutePositive,
-	AbsoluteAbsolute,
-	Relative
+	AbsoluteAbsolute
 };
 
 UENUM(BlueprintType)
@@ -47,7 +46,7 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true))
 	EBrainFlowProcessing BrainFlowProcessing = EBrainFlowProcessing::Current;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="BrainFlow", meta=(AllowPrivateAccess=true))
-	EBrainFlowFormat BrainFlowFormat = EBrainFlowFormat::Relative;
+	EBrainFlowFormat BrainFlowFormat = EBrainFlowFormat::AbsoluteAbsolute;
 
 	const int BoardId = static_cast<int>(BoardIds::ENOPHONE_BOARD);
 	TSharedPtr<BoardShim> BoardPtr;
@@ -70,5 +69,4 @@ private:
 	void AbsoluteLatest(BrainFlowArray<double, 2>& Data);
 	void AbsolutePositiveLatest(BrainFlowArray<double, 2>& Data);
 	void AbsoluteAbsoluteLatest(BrainFlowArray<double, 2>& Data);
-	void RelativeLatest(BrainFlowArray<double, 2>& Data);
 };

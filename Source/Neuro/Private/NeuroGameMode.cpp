@@ -161,9 +161,6 @@ void ANeuroGameMode::LatestBrainFlowData()
 			case EBrainFlowFormat::AbsoluteAbsolute:
 				AbsoluteAbsoluteLatest(data);
 				break;
-			case EBrainFlowFormat::Relative:
-				RelativeLatest(data);
-				break;
 			default: ;
 			}
 			LatestCachedBrainFlowData = true;
@@ -214,21 +211,5 @@ void ANeuroGameMode::AbsoluteAbsoluteLatest(BrainFlowArray<double, 2>& Data)
 		
 		CachedBrainFlowData[index] = FMath::Clamp(FMath::Abs(static_cast<const float>(avg)) / MaxBrainFlowValue, 0.f, 1.f);
 		RawCachedBrainFlowData[index] = avg;
-	}
-}
-
-void ANeuroGameMode::RelativeLatest(BrainFlowArray<double, 2>& Data)
-{
-	int filteredSize;
-	for (int index = 0; index < EegChannels.size(); ++index)
-	{
-		double* downSampledData = DataFilter::perform_downsampling(Data.get_address(EegChannels[index]), Data.get_size(1), Data.get_size(1), static_cast<int>(AggOperations::MEAN), &filteredSize);
-		
-		const float oldData = RawCachedBrainFlowData[index];
-		const float newData = static_cast<const float>(downSampledData[0]);
-		CachedBrainFlowData[index] = FMath::Clamp(FMath::Abs(newData - oldData) / MaxBrainFlowValue, 0.f, 1.f);
-		RawCachedBrainFlowData[index] = downSampledData[0];
-		
-		delete[] downSampledData;
 	}
 }
