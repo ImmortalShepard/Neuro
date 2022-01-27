@@ -10,6 +10,7 @@ enum class EBrainFlowFormat : uint8
 {
 	Absolute,
 	AbsolutePositive,
+	AbsoluteAbsolute,
 	Relative
 };
 
@@ -68,5 +69,6 @@ private:
 	void LatestBrainFlowData();
 	void AbsoluteLatest(BrainFlowArray<double, 2>& Data);
 	void AbsolutePositiveLatest(BrainFlowArray<double, 2>& Data);
+	void AbsoluteAbsoluteLatest(BrainFlowArray<double, 2>& Data);
 	void RelativeLatest(BrainFlowArray<double, 2>& Data);
 };
