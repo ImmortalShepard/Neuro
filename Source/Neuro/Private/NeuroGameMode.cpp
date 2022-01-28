@@ -209,7 +209,7 @@ void ANeuroGameMode::AbsoluteAbsoluteLatest(BrainFlowArray<double, 2>& Data)
 		}
 		avg /= len;
 		
-		CachedBrainFlowData[index] = FMath::Clamp(FMath::Abs(static_cast<const float>(avg)) / MaxBrainFlowValue, 0.f, 1.f);
+		CachedBrainFlowData[index] = FMath::Clamp(static_cast<const float>(avg) / MaxBrainFlowValue, 0.f, 1.f);
 		RawCachedBrainFlowData[index] = avg;
 	}
 }
